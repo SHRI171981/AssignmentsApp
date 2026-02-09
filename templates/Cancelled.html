@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cancelled {{type}}s</title>
+    <link rel="stylesheet" type="text/css" href="../static/css/table.css">
+    <link rel="stylesheet" type="text/css" href="../static/css/body.css">
+</head>
+<body>
+    <a href="/Dashboard">
+        <h3 style="text-align:left;">Dashboard</h3> 
+    </a>
+    <h1>Cancelled {{type}}s</h1>
+    {% if cancelled %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Subject</th>
+                <th>Topic</th>
+                <th>Feedback</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in cancelled %}
+            <tr>
+                <td><a href="/Details/{{ i.ListID }}">{{ i.Name }}</a></td>
+                <td>{{ i.Description }}</td>
+                <td><a href="/Cat_assign/{{ i.Category }}">{{ i.Category }}</a></td>
+                <td>{{ i.Subject }}</td>
+                <td>{{ i.Topic }}</td>
+                <td>{{ i.Feedback }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <h3 style="text-align: center;">No Cancelled {{type}}s!</h3>
+    {% endif %}
+</body>
+</html>

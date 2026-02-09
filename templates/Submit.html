@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Submission Form</title>
+    <link rel="stylesheet" href="../static/css/form.css">
+    <link rel="stylesheet" href="../static/css/body.css">
+</head>
+<body>
+    <a href="/Details/{{ assign.ListID }}">
+        <h3 style="text-align:left;">Go Back</h3> 
+    </a>
+        <form action="/Submit/{{ assign.ListID }}" method="post">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" value="{{ assign.Name }}" readonly>
+            </div>
+
+            <div class="form-group">
+                <label for="result">Result</label>
+                <input type="number" id="result" name="result" min="0" max="100">
+            </div>
+
+            <div class="form-group">
+                <label for="feedback">Feedback</label>
+                <textarea id="feedback" name="feedback"></textarea>
+            </div>
+
+            <div class="form-group">
+                <button type="submit">Submit</button>
+            </div>
+        </form>
+    
+</body>
+</html>

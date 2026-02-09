@@ -1,0 +1,17 @@
+Overall:
+1. Assignments by Category (Bar Chart)
+2. Completion vs Pending Assignments (Pie Chart)
+3. Completion Rate Over Time (Line Chart)
+4. Assignment Status Breakdown by Category (Stacked Bar Chart)
+5. Due Dates vs Completion Dates (Scatter Plot) + Result Bubble
+6. Assignments created over time (Line Chart)
+
+
+Performance:
+1. Average Result by Category (Bar Chart)
+2. Result Variance by Category (Bar Chart)
+3. Result Distribution by Marks (Histogram)
+4. Result Distribution over Time (Line Chart)
+5. High Scores by Category (Bar Chart) 90%+
+6. High Scores over Time (Line Chart) 90%+
+

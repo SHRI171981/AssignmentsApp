@@ -1,0 +1,189 @@
+'''
+#Statistics
+def Assignment_by_category():
+    categories = (db.session.query(ToDo.Category,func.count(ToDo.Category).label('Count'))
+                        .filter(ToDo.StartDate>=today-timedelta(days=60))
+                        .group_by(ToDo.Category)
+                        .order_by(func.count(ToDo.Category).desc())
+                        .all())
+    names,counts=zip(*categories)
+    plt.figure(figsize=(10, 6))
+    plt.bar(names, counts, color='darkblue')
+    plt.title('Assignments by Category')
+    plt.xlabel('Category')
+    plt.ylabel('Number of Assignments')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(path('Overall/assign_by_cat.jpg')) 
+    plt.close()
+
+def Assignment_by_status():
+    status=(db.session.query(ToDo.Status,func.count(ToDo.Status).label('Count'))
+            .filter(ToDo.StartDate>=today-timedelta(days=60))
+            .group_by(ToDo.Status)
+            .order_by(func.count(ToDo.Status).desc())
+            .all())
+    names,counts=zip(*status)
+    plt.figure(figsize=(8, 8))
+    plt.pie(counts, labels=names, autopct='%1.1f%%', colors=plt.cm.Paired(range(len(names))))
+    plt.title('Assignment Status Distribution')
+    plt.tight_layout()
+    
+    # Save the figure
+    plt.savefig(path('Overall/status_distribution_pie.jpg'))
+    plt.close()
+
+def Completion_rate_over_time():
+    today = datetime.today().date()
+    start_date = today - timedelta(days=60)
+    
+    results = db.session.query(
+        func.date_trunc('week', ToDo.StartDate).label('week'),
+        func.count().label('total'),
+        func.sum(func.case([(ToDo.Status == 'submitted', 1)])).label('completed')
+    ).filter(ToDo.StartDate >= start_date).group_by('week').order_by('week').all()
+    
+    weeks = [row.week for row in results]
+    total_counts = [row.total for row in results]
+    completed_counts = [row.completed for row in results]
+    completion_ratios = [completed / total if total > 0 else 0 for completed, total in zip(completed_counts, total_counts)]
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(weeks, completion_ratios, marker='o', color='b')
+    plt.xlabel('Week')
+    plt.ylabel('Completion Ratio')
+    plt.title('Completion Ratio Over Time')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(path('Overall/completion_ratio_over_time.jpg'))
+    plt.close()
+
+def Assignment_status_by_category():
+    today = datetime.today().date()
+    start_date = today - timedelta(days=60)
+    
+    # Query data
+    results = db.session.query(
+        ToDo.Category,
+        ToDo.Status,
+        func.count().label('count')
+    ).filter(ToDo.StartDate >= start_date).group_by(ToDo.Category, ToDo.Status).order_by(ToDo.Category, ToDo.Status).all()
+
+    # Process data
+    data = pd.DataFrame(results, columns=['Category', 'Status', 'Count'])
+    pivot_data = data.pivot_table(index='Category', columns='Status', values='Count', fill_value=0)
+    
+    # Define custom colors
+    colors = {
+        'Submitted': 'blue',
+        'Due Date Passed': 'red',
+        'Pending': 'green',
+        'Cancelled': 'black'
+    }
+
+    # Define the desired order of the stacks
+    stack_order = ['Submitted', 'Pending', 'Due Date Passed', 'Cancelled']
+    
+    # Reorder columns according to the stack_order
+    pivot_data = pivot_data.reindex(columns=stack_order, fill_value=0)
+
+    # Plot
+    ax = pivot_data.plot(kind='bar', stacked=True, figsize=(12, 8), color=[colors.get(status, 'grey') for status in pivot_data.columns])
+    plt.title('Assignment Status Breakdown by Category')
+    plt.xlabel('Category')
+    plt.ylabel('Number of Assignments')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(path('Overall/Assignment_status_by_category.jpg'))
+    plt.close()
+
+def Due_vs_completion_dates():
+    today = datetime.today().date()
+    start_date = today - timedelta(days=60)
+
+    # Query data
+    results = db.session.query(
+        ToDo.DueDate,
+        ToDo.FinishDate,
+        ToDo.Result
+    ).filter(ToDo.StartDate >= start_date).all()
+
+    # Convert to DataFrame
+    df = pd.DataFrame(results, columns=['DueDate', 'CompletionDate', 'Result'])
+    
+    # Remove rows with NaN in DueDate or CompletionDate
+    df = df.dropna(subset=['DueDate', 'CompletionDate'])
+    
+    # Ensure 'Result' is numerical (if it's not, you might need to convert or process it)
+    df['Result'] = pd.to_numeric(df['Result'], errors='coerce')
+    
+    # Handle missing values after conversion
+    df = df.dropna(subset=['Result'])
+    
+    # Plot
+    plt.figure(figsize=(12, 8))
+    scatter = plt.scatter(
+        df['DueDate'],
+        df['CompletionDate'],
+        s=df['Result'] * 10,  # Bubble size scaled by result; adjust multiplier as needed
+        alpha=0.6,
+        c='blue',  # Color of the bubbles
+        edgecolors='w',
+        linewidth=0.5
+    )
+    
+    plt.title('Due Dates vs Completion Dates')
+    plt.xlabel('Due Date')
+    plt.ylabel('Completion Date')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(path('Overall/Due_vs_Completion.jpg'))
+    plt.close() 
+
+def Assignments_created_over_time():
+    today = datetime.today().date()
+    start_date = today - timedelta(days=60)
+
+    # Query data
+    assignments = db.session.query(
+        ToDo.StartDate
+    ).filter(ToDo.StartDate >= start_date).all()
+
+    # Convert to DataFrame
+    df = pd.DataFrame(assignments, columns=['StartDate'])
+
+    # Remove rows with NaN in StartDate
+    df = df.dropna(subset=['StartDate'])
+
+    # Convert StartDate to datetime
+    df['StartDate'] = pd.to_datetime(df['StartDate'])
+
+    # Create a new column for 5-day intervals
+    df['5DayInterval'] = df['StartDate'].dt.to_period('D').apply(lambda r: r.start_time - timedelta(days=r.dayofweek % 1))
+
+    # Group by 5-day intervals and count assignments
+    grouped_df = df.groupby('5DayInterval').size().reset_index(name='Count')
+
+    # Plot
+    plt.figure(figsize=(12, 6))
+    plt.plot(grouped_df['5DayInterval'], grouped_df['Count'], marker='o', linestyle='-')
+    plt.xlabel('Date')
+    plt.ylabel('Number of Assignments Created')
+    plt.title('Assignments Created Over Time (5-Day Intervals)')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    
+    plt.savefig(path('Overall/Assignment_Create.jpg'))
+    plt.close()
+
+
+@app.route('/trial',methods=['GET'])
+def trial():
+    Assignment_by_category()
+    Assignment_by_status()
+    #Completion_rate_over_time()
+    Assignment_status_by_category()
+    Due_vs_completion_dates()
+    Assignments_created_over_time()
+    return render_template('trial.html')
+'''
